@@ -1,0 +1,128 @@
+# Optimized config for NVIDIA H100 GPU (80GB)
+# Expected training time: 6-9 hours (vs 12-18 hours on default config)
+# Key optimizations:
+# - Larger batch size (16 vs 8) - utilizes H100's 80GB memory
+# - Aggressive validation frequency to catch convergence early
+# - All improvements from next_frame_IMPROVED.yml
+
+training:
+  L1: false
+  batch_size: 16  # Increased from 8 - H100 can handle it!
+  n_epochs: 10000
+  n_iters: 100000
+  snapshot_freq: 2500
+  snapshot_sampling: true
+  sample_freq: 2500
+  val_freq: 500  # Frequent validation to monitor progress
+  log_freq: 50
+  log_all_sigmas: false
+
+sampling:
+  batch_size: 100  # Increased from 50 for faster inference
+  data_init: false
+  ckpt_id: 0
+  final_only: true
+  fid: false
+  ssim: true
+  fvd: true
+  denoise: true
+  subsample: 50  # DDIM with 50 steps
+  num_samples4fid: 10000
+  num_samples4fvd: 10000
+  inpainting: false
+  interpolation: false
+  n_interpolations: 15
+  consistent: true
+  step_lr: 0.0
+  n_steps_each: 0
+  train: false
+  num_frames_pred: 2  # Skip frame strategy
+  clip_before: true
+  max_data_iter: 1
+  init_prev_t: -1.0
+  one_frame_at_a_time: false
+  preds_per_test: 1
+
+fast_fid:
+  batch_size: 1000
+  num_samples: 1000
+  begin_ckpt: 5000
+  freq: 5000
+  end_ckpt: 300000
+  pr_nn_k: 3
+  verbose: false
+  ensemble: false
+  step_lr: 0.0
+  n_steps_each: 0
+
+test:
+  begin_ckpt: 5000
+  end_ckpt: 300000
+  batch_size: 32  # Increased for H100
+
+data:
+  dataset: "ElevenVsOneFramePredDatasets"
+  image_size: 128
+  channels: 3
+  logit_transform: false
+  uniform_dequantization: false
+  gaussian_dequantization: false
+  random_flip: true  # Data augmentation
+  rescaled: true
+  num_workers: 8  # More workers for H100's speed
+  num_digits: 2
+  step_length: 0.1
+  num_frames: 2  # Predict 2 frames at once (skip strategy)
+  num_frames_cond: 11
+  num_frames_future: 0
+  prob_mask_cond: 0.0
+  prob_mask_future: 0.0
+  prob_mask_sync: false
+
+model:
+  depth: deeper
+  version: DDIM  # Faster and better than DDPM
+  gamma: false
+  arch: unetmore
+  type: v1
+  time_conditional: true
+  dropout: 0.1
+  sigma_dist: linear
+  sigma_begin: 0.02
+  sigma_end: 0.0001
+  num_classes: 1000
+  ema: true
+  ema_rate: 0.9999
+  spec_norm: false
+  normalization: InstanceNorm++
+  nonlinearity: swish
+  ngf: 128  # Larger model
+  ch_mult: 
+    - 1
+    - 2
+    - 3
+    - 4
+    - 4
+  num_res_blocks: 3
+  attn_resolutions: 
+    - 8
+    - 16
+    - 32
+  n_head_channels: 128
+  conditional: true
+  noise_in_cond: false
+  output_all_frames: false
+  cond_emb: false
+  spade: true  # Better conditioning
+  spade_dim: 256
+
+optim:
+  weight_decay: 0.0001
+  optimizer: "AdamW"
+  lr: 0.00028  # Scaled up for larger batch size (sqrt(2) × 0.0002)
+  warmup: 5000
+  beta1: 0.9
+  amsgrad: false
+  eps: 0.00000001
+  grad_clip: 1.0
+
